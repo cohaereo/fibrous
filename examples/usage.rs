@@ -1,0 +1,44 @@
+use fibrous::{DefaultFiberApi, FiberApi, FiberHandle};
+
+const STACK_SIZE: usize = 4 * 1024; // 4 KB
+
+static mut MAIN_FIBER: FiberHandle = FiberHandle::null();
+
+fn main() {
+    std::thread::spawn(|| unsafe {
+        unsafe extern "C" fn fiber_entry(user_data: *mut ()) {
+            let message = unsafe { &*(user_data as *const &str) };
+            println!(
+                "[second fiber] Main fiber left us a message: \"{}\"",
+                message
+            );
+            println!("[second fiber] Switching back to main fiber...");
+            DefaultFiberApi::switch_to_fiber(MAIN_FIBER);
+            println!("[second fiber] Back in the second fiber after main fiber resumed us!");
+            println!("[second fiber] Fiber execution complete.");
+            DefaultFiberApi::switch_to_fiber(MAIN_FIBER);
+        }
+
+        let main_fiber =
+            DefaultFiberApi::convert_thread_to_fiber().expect("Failed to convert thread to fiber");
+        MAIN_FIBER = main_fiber;
+
+        let message = "Hello from the main fiber!";
+        let user_data = &message as *const &str as *mut ();
+
+        let fiber = DefaultFiberApi::create_fiber(STACK_SIZE, fiber_entry, user_data)
+            .expect("Failed to create fiber");
+
+        DefaultFiberApi::switch_to_fiber(fiber);
+
+        println!("Back in the main fiber!");
+        println!("Letting the fiber run its second half...");
+
+        DefaultFiberApi::switch_to_fiber(fiber);
+
+        println!("Fiber has finished execution!");
+
+        DefaultFiberApi::destroy_fiber(fiber);
+    })
+    .join();
+}

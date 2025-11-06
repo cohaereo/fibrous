@@ -1,0 +1,12 @@
+[package]
+name = "fibrous"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cfg-if = "1.0.4"
+libc = { version = "0.2", optional = true }
+
+[features]
+default = ["ucontext"]
+ucontext = ["libc"]
