@@ -1,4 +1,8 @@
+use std::{error::Error, fmt::Display};
+
 use cfg_if::cfg_if;
+
+mod stack;
 
 pub mod r#impl;
 
@@ -58,7 +62,7 @@ pub unsafe trait FiberApi {
     /// - `to` must be a valid fiber handle
     /// - Both fibers must be on the same thread (no fiber migration)
     /// - Caller must ensure proper synchronization of shared state
-    unsafe fn switch_to_fiber(to: FiberHandle);
+    unsafe fn switch_to_fiber(from: FiberHandle, to: FiberHandle);
 
     /// Destroy a fiber and free its resources
     ///
@@ -71,5 +75,18 @@ pub unsafe trait FiberApi {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FiberError {
+    /// Unspecified error during fiber creation
+    CreationFailed,
     PlatformError(i32),
+}
+
+impl Error for FiberError {}
+
+impl Display for FiberError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FiberError::CreationFailed => write!(f, "Fiber creation failed"),
+            FiberError::PlatformError(code) => write!(f, "Platform error with code {}", code),
+        }
+    }
 }

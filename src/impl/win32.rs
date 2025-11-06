@@ -40,7 +40,8 @@ unsafe impl FiberApi for Win32FiberApi {
         Ok(FiberHandle(fiber_ptr))
     }
 
-    unsafe fn switch_to_fiber(to: FiberHandle) {
+    unsafe fn switch_to_fiber(from: FiberHandle, to: FiberHandle) {
+        _ = from; // from is unused on Windows but kept for symmetry
         SwitchToFiber(to.0);
     }
 
