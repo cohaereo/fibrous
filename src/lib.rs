@@ -8,9 +8,7 @@ mod stack;
 pub mod r#impl;
 
 cfg_if! {
-    if #[cfg(target_os = "windows")] {
-        pub type DefaultFiberApi = r#impl::win32::Win32FiberApi;
-    } else if #[cfg(all(feature = "ucontext", target_os = "linux"))] {
+    if #[cfg(all(feature = "ucontext", target_os = "linux"))] {
         pub type DefaultFiberApi = r#impl::ucontext::UContextFiberApi;
     } else {
         compile_error!("Unsupported platform");

@@ -27,7 +27,7 @@ pub struct UContextFiberApi;
 unsafe impl FiberApi for UContextFiberApi {
     unsafe fn create_fiber(
         stack: FiberStackPointer,
-        entry: crate::FiberEntry,
+        entry: FiberEntry,
         user_data: *mut (),
     ) -> Result<FiberHandle, crate::FiberError> {
         let mut ctx = Box::new(LibcFiberContext::default());
