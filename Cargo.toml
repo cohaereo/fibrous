@@ -2,6 +2,7 @@
 name = "fibrous"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 authors = ["cohaereo <cohae@cohae.dev>"]
 description = "A lightweight fiber abstraction over multiple backends (ucontext, win32, asm)."
 categories = ["concurrency", "asynchronous", "api-bindings"]
