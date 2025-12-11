@@ -11,7 +11,7 @@ cfg_if! {
     if #[cfg(all(feature = "ucontext", target_os = "linux"))] {
         pub type DefaultFiberApi = r#impl::ucontext::UContextFiberApi;
     } else {
-        compile_error!("Unsupported platform");
+        pub type DefaultFiberApi = r#impl::fcontext::FContextFiberApi;
     }
 }
 
