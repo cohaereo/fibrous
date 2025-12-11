@@ -16,3 +16,10 @@ libc = { version = "0.2", optional = true }
 [features]
 default = ["ucontext"]
 ucontext = ["libc"]
+
+[dev-dependencies]
+criterion = "0.8"
+
+[[bench]]
+name = "fiber_switch"
+harness = false
