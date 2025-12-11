@@ -1,6 +1,7 @@
 use std::{error::Error, fmt::Display};
 
 use cfg_if::cfg_if;
+pub use crate::stack::{FiberStackPointer, FiberStack};
 
 mod stack;
 
@@ -37,12 +38,12 @@ pub unsafe trait FiberApi {
     /// Create a new fiber with the given stack and entry point
     ///
     /// # Safety
-    /// - `stack` must be valid, aligned, and writable memory
-    /// - `stack.size` must be sufficient for the platform (typically >= 64KB)
+    /// - `stack` must be valid for the lifetime of the fiber
+    /// - `stack.size` must be sufficient for the platform to prevent stack overflows (typically >= 64KB)
     /// - `entry` must be a valid function pointer
     /// - `entry` must never return (must switch to another fiber or exit)
     unsafe fn create_fiber(
-        stack_size: usize,
+        stack: FiberStackPointer,
         entry: FiberEntry,
         user_data: *mut (),
     ) -> Result<FiberHandle, FiberError>;

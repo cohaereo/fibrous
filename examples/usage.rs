@@ -1,4 +1,4 @@
-use fibrous::{DefaultFiberApi, FiberApi, FiberHandle};
+use fibrous::{DefaultFiberApi, FiberApi, FiberHandle, FiberStack};
 
 const STACK_SIZE: usize = 4 * 1024; // 4 KB
 
@@ -27,7 +27,8 @@ fn main() {
         let message = "Hello from the main fiber!";
         let user_data = &message as *const &str as *mut ();
 
-        let fiber = DefaultFiberApi::create_fiber(STACK_SIZE, fiber_entry, user_data)
+        let stack = FiberStack::new(STACK_SIZE);
+        let fiber = DefaultFiberApi::create_fiber(stack.as_pointer(), fiber_entry, user_data)
             .expect("Failed to create fiber");
         SECOND_FIBER = fiber;
 

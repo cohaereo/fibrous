@@ -1,8 +1,8 @@
-use crate::{stack::FiberStack, FiberApi, FiberEntry, FiberHandle};
+use crate::{stack::FiberStackPointer, FiberApi, FiberEntry, FiberHandle};
 
 struct LibcFiberContext {
     ucp: libc::ucontext_t,
-    stack: Option<FiberStack>,
+    stack: Option<FiberStackPointer>,
 }
 
 impl Default for LibcFiberContext {
@@ -26,7 +26,7 @@ pub struct UContextFiberApi;
 
 unsafe impl FiberApi for UContextFiberApi {
     unsafe fn create_fiber(
-        stack_size: usize,
+        stack: FiberStackPointer,
         entry: crate::FiberEntry,
         user_data: *mut (),
     ) -> Result<FiberHandle, crate::FiberError> {
@@ -36,9 +36,8 @@ unsafe impl FiberApi for UContextFiberApi {
             return Err(crate::FiberError::CreationFailed);
         }
 
-        let stack = FiberStack::new(stack_size);
-        ctx.ucp.uc_stack.ss_sp = stack.base as *mut libc::c_void;
-        ctx.ucp.uc_stack.ss_size = stack.size;
+        ctx.ucp.uc_stack.ss_sp = stack.base() as *mut libc::c_void;
+        ctx.ucp.uc_stack.ss_size = stack.size();
         ctx.ucp.uc_link = std::ptr::null_mut();
 
         ctx.stack = Some(stack);
@@ -72,6 +71,5 @@ unsafe impl FiberApi for UContextFiberApi {
 
     unsafe fn destroy_fiber(handle: FiberHandle) {
         let _ctx = Box::from_raw(handle.0 as *mut LibcFiberContext);
-        // Dropping the box frees the stack
     }
 }
