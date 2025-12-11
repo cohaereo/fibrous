@@ -2,19 +2,17 @@ use crate::{stack::FiberStackPointer, FiberApi, FiberEntry, FiberHandle};
 
 struct LibcFiberContext {
     ucp: libc::ucontext_t,
-    stack: Option<FiberStackPointer>,
 }
 
 impl Default for LibcFiberContext {
     fn default() -> Self {
         LibcFiberContext {
             ucp: unsafe { std::mem::zeroed() },
-            stack: None,
         }
     }
 }
 
-extern "C" fn fiber_wrapper(entry: FiberEntry, user_data: *mut ()) {
+extern "C" fn ucontext_fiber_wrapper(entry: FiberEntry, user_data: *mut ()) {
     unsafe {
         entry(user_data);
 
@@ -40,11 +38,9 @@ unsafe impl FiberApi for UContextFiberApi {
         ctx.ucp.uc_stack.ss_size = stack.size();
         ctx.ucp.uc_link = std::ptr::null_mut();
 
-        ctx.stack = Some(stack);
-
         libc::makecontext(
             &raw mut ctx.ucp,
-            std::mem::transmute::<extern "C" fn(_, _), extern "C" fn()>(fiber_wrapper),
+            std::mem::transmute::<extern "C" fn(_, _), extern "C" fn()>(ucontext_fiber_wrapper),
             2,
             entry,
             user_data,
