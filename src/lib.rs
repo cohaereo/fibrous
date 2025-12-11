@@ -5,13 +5,13 @@ pub use crate::stack::{FiberStackPointer, FiberStack};
 
 mod stack;
 
-pub mod r#impl;
+pub mod sys;
 
 cfg_if! {
     if #[cfg(all(feature = "ucontext", target_os = "linux"))] {
-        pub type DefaultFiberApi = r#impl::ucontext::UContextFiberApi;
+        pub type DefaultFiberApi = sys::ucontext::UContextFiberApi;
     } else {
-        pub type DefaultFiberApi = r#impl::fcontext::FContextFiberApi;
+        pub type DefaultFiberApi = sys::fcontext::FContextFiberApi;
     }
 }
 
