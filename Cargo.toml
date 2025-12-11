@@ -6,6 +6,7 @@ authors = ["cohaereo <cohae@cohae.dev>"]
 description = "A lightweight fiber abstraction over multiple backends (ucontext, win32, asm)."
 categories = ["concurrency", "asynchronous", "api-bindings"]
 keywords = ["fibers", "coroutines", "context", "concurrency", "threading"]
+default-target = "x86_64-unknown-linux-gnu"
 
 [dependencies]
 cfg-if = "1.0.4"
