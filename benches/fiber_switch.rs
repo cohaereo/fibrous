@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 
 use fibrous::{
     sys::fcontext::FContextFiberApi, sys::ucontext::UContextFiberApi, FiberApi, FiberHandle,
@@ -23,43 +23,42 @@ extern "C" fn worker_entry_fn(data: *mut ()) {
     }
 }
 
-fn bench_implementation<Api: FiberApi>(c: &mut Criterion, name: &str) {
-    c.bench_function(name, |b| {
-        unsafe {
-            let main_handle = Api::convert_thread_to_fiber().unwrap();
-            let stack = FiberStack::new(1024 * 64); // 64kb stack
+fn bench_implementation<Api: FiberApi>(b: &mut Bencher) {
+    unsafe {
+        let main_handle = Api::convert_thread_to_fiber().unwrap();
+        let stack = FiberStack::new(1024 * 64); // 64kb stack
 
-            let mut data = PingPongData {
-                main_handle,
-                worker_handle: FiberHandle::null(),
-                counter: Api::switch_to_fiber as *const () as usize,
-            };
+        let mut data = PingPongData {
+            main_handle,
+            worker_handle: FiberHandle::null(),
+            counter: Api::switch_to_fiber as *const () as usize,
+        };
 
-            let worker_handle = Api::create_fiber(
-                stack.as_pointer(),
-                worker_entry_fn,
-                &raw mut data as *mut (),
-            )
-            .unwrap();
+        let worker_handle = Api::create_fiber(
+            stack.as_pointer(),
+            worker_entry_fn,
+            &raw mut data as *mut (),
+        )
+        .unwrap();
 
-            data.worker_handle = worker_handle;
+        data.worker_handle = worker_handle;
 
-            b.iter(|| {
-                Api::switch_to_fiber(main_handle, worker_handle);
+        b.iter(|| {
+            Api::switch_to_fiber(main_handle, worker_handle);
 
-                // Prevent optimization
-                std::hint::black_box(&mut data);
-            });
+            // Prevent optimization
+            std::hint::black_box(&mut data);
+        });
 
-            // Cleanup
-            Api::destroy_fiber(worker_handle);
-        }
-    });
+        // Cleanup
+        Api::destroy_fiber(worker_handle);
+    }
 }
 
 fn fiber_benchmark(c: &mut Criterion) {
-    bench_implementation::<FContextFiberApi>(c, "fcontext_switch");
-    bench_implementation::<UContextFiberApi>(c, "ucontext_switch");
+    let mut group = c.benchmark_group("context_switch");
+    group.bench_function("fcontext", bench_implementation::<FContextFiberApi>);
+    group.bench_function("ucontext", bench_implementation::<UContextFiberApi>);
 }
 
 criterion_group!(benches, fiber_benchmark);

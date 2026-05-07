@@ -41,5 +41,6 @@ fn main() {
 
         println!("Fiber has finished execution!");
     })
-    .join().expect("Thread panicked");
+    .join()
+    .expect("Thread panicked");
 }
