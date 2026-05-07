@@ -25,8 +25,12 @@ impl FiberStackPointer {
         Self { base, size }
     }
 
-    pub fn base(&self) -> *mut c_void {
+    pub fn bottom(&self) -> *mut c_void {
         self.base
+    }
+
+    pub fn top(&self) -> *mut c_void {
+        unsafe { self.base.add(self.size) }
     }
 
     pub fn size(&self) -> usize {
@@ -48,6 +52,14 @@ impl FiberStack {
 
     pub fn as_pointer(&self) -> FiberStackPointer {
         unsafe { FiberStackPointer::from_base_size(self.0.bottom().cast(), self.0.len()) }
+    }
+
+    pub fn guard_page_start(&self) -> *mut c_void {
+        unsafe { self.0.bottom().sub(page_size()) }
+    }
+
+    pub fn guard_page_end(&self) -> *mut c_void {
+        self.0.bottom()
     }
 }
 
@@ -94,3 +106,46 @@ impl Drop for UnsafeFiberStack {
         }
     }
 }
+
+#[cfg(target_os = "windows")]
+pub fn page_size() -> usize {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static PAGE_SIZE: AtomicUsize = AtomicUsize::new(0);
+
+    let mut ret = PAGE_SIZE.load(Ordering::Relaxed);
+
+    if ret == 0 {
+        ret = unsafe {
+            let mut info = std::mem::zeroed();
+            winapi::um::sysinfoapi::GetSystemInfo(&mut info);
+            info.dwPageSize as usize
+        };
+
+        PAGE_SIZE.store(ret, Ordering::Relaxed);
+    }
+
+    ret
+}
+
+#[cfg(target_family = "unix")]
+pub fn page_size() -> usize {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static PAGE_SIZE: AtomicUsize = AtomicUsize::new(0);
+
+    let mut ret = PAGE_SIZE.load(Ordering::Relaxed);
+
+    if ret == 0 {
+        unsafe {
+            ret = libc::sysconf(libc::_SC_PAGESIZE) as usize;
+        }
+
+        PAGE_SIZE.store(ret, Ordering::Relaxed);
+    }
+
+    ret
+}
+
+#[cfg(not(any(target_os = "windows", target_family = "unix")))]
+compile_error!("Unsupported platform: page size is not available on this OS!");

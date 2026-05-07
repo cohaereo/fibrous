@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-pub use crate::stack::{FiberStack, FiberStackPointer, UnsafeFiberStack};
+pub use crate::stack::{page_size, FiberStack, FiberStackPointer, UnsafeFiberStack};
 use cfg_if::cfg_if;
 
 mod stack;

@@ -42,8 +42,7 @@ extern "C" fn fcontext_fiber_wrapper(t: Transfer) -> ! {
     }
 }
 
-extern "C" fn thread_stub(_p: *mut ()) {
-}
+extern "C" fn thread_stub(_p: *mut ()) {}
 
 pub struct FContextFiberApi;
 
@@ -54,8 +53,8 @@ unsafe impl FiberApi for FContextFiberApi {
         user_data: *mut (),
     ) -> Result<FiberHandle, FiberError> {
         let stack = Stack::new(
-            stack.base().add(stack.size()).cast(), // Stack top
-            stack.base().cast(), // Stack bottom
+            stack.bottom().add(stack.size()).cast(), // Stack top
+            stack.bottom().cast(),                   // Stack bottom
         );
 
         let ctx = Box::new(BoostFiberContext {
@@ -90,7 +89,10 @@ unsafe impl FiberApi for FContextFiberApi {
         // 2. Retrieve the target context.
         // Note: If 'to' is the main thread, it must have been populated by a previous switch
         // (the wrapper or the return path below).
-        let ctx = to_ctx.ctx.take().expect("Target fiber has no valid context to resume");
+        let ctx = to_ctx
+            .ctx
+            .take()
+            .expect("Target fiber has no valid context to resume");
 
         // 3. Suspend current fiber ('from') and jump to 'to'.
         // We pass 'to' (the handle pointer) as data so the wrapper can find itself.

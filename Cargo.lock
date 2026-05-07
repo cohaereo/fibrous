@@ -209,6 +209,7 @@ dependencies = [
  "context",
  "criterion",
  "libc",
+ "winapi",
 ]
 
 [[package]]
