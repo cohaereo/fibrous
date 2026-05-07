@@ -58,7 +58,7 @@ impl FiberStack {
     }
 
     pub fn guard_page_start(&self) -> *mut c_void {
-        unsafe { self.0.bottom().sub(page_size()).cast::<c_void>() }
+        unsafe { self.0.bottom().byte_sub(page_size()).cast::<c_void>() }
     }
 
     pub fn guard_page_end(&self) -> *mut c_void {
