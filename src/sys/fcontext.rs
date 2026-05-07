@@ -53,8 +53,8 @@ unsafe impl FiberApi for FContextFiberApi {
         user_data: *mut (),
     ) -> Result<FiberHandle, FiberError> {
         let stack = Stack::new(
-            stack.bottom().add(stack.size()).cast(), // Stack top
-            stack.bottom().cast(),                   // Stack bottom
+            stack.top().cast(),    // Stack top
+            stack.bottom().cast(), // Stack bottom
         );
 
         let ctx = Box::new(BoostFiberContext {

@@ -47,7 +47,10 @@ impl FiberStack {
     /// # Remarks
     /// This will allocate bytes + 1 page for the guard page.
     pub fn new(size: usize) -> Self {
-        Self(context::stack::ProtectedFixedSizeStack::new(size).expect("Stack allocation failed"))
+        Self(
+            context::stack::ProtectedFixedSizeStack::new(size.max(min_stack_size()))
+                .expect("Stack allocation failed"),
+        )
     }
 
     pub fn as_pointer(&self) -> FiberStackPointer {
@@ -55,11 +58,11 @@ impl FiberStack {
     }
 
     pub fn guard_page_start(&self) -> *mut c_void {
-        unsafe { self.0.bottom().sub(page_size()) }
+        unsafe { self.0.bottom().sub(page_size()).cast::<c_void>() }
     }
 
     pub fn guard_page_end(&self) -> *mut c_void {
-        self.0.bottom()
+        self.0.bottom().cast::<c_void>()
     }
 }
 
@@ -74,7 +77,7 @@ impl UnsafeFiberStack {
         use std::alloc::{alloc, handle_alloc_error, Layout};
 
         // Ensure minimum size and alignment
-        let size = size.max(64 * 1024).next_multiple_of(4096);
+        let size = size.max(min_stack_size()).next_multiple_of(4096);
         let align = 16.max(align_of::<usize>());
 
         let layout = Layout::from_size_align(size, align).expect("Invalid layout for fiber stack");
@@ -149,3 +152,7 @@ pub fn page_size() -> usize {
 
 #[cfg(not(any(target_os = "windows", target_family = "unix")))]
 compile_error!("Unsupported platform: page size is not available on this OS!");
+
+fn min_stack_size() -> usize {
+    page_size()
+}

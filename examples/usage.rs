@@ -1,6 +1,6 @@
 use fibrous::{DefaultFiberApi, FiberApi, FiberHandle, FiberStack};
 
-const STACK_SIZE: usize = 4 * 1024; // 4 KB
+const STACK_SIZE: usize = 16 * 1024; // 16 KB
 
 static mut MAIN_FIBER: FiberHandle = FiberHandle::null();
 static mut SECOND_FIBER: FiberHandle = FiberHandle::null();
@@ -20,6 +20,7 @@ fn main() {
             DefaultFiberApi::switch_to_fiber(SECOND_FIBER, MAIN_FIBER);
         }
 
+        println!("Converting main thread to fiber...");
         let main_fiber =
             DefaultFiberApi::convert_thread_to_fiber().expect("Failed to convert thread to fiber");
         MAIN_FIBER = main_fiber;
@@ -27,10 +28,13 @@ fn main() {
         let message = "Hello from the main fiber!";
         let user_data = &message as *const &str as *mut ();
 
+        println!("Creating second fiber...");
         let stack = FiberStack::new(STACK_SIZE);
         let fiber = DefaultFiberApi::create_fiber(stack.as_pointer(), fiber_entry, user_data)
             .expect("Failed to create fiber");
         SECOND_FIBER = fiber;
+
+        println!("Switching to second fiber...");
 
         DefaultFiberApi::switch_to_fiber(MAIN_FIBER, SECOND_FIBER);
 
